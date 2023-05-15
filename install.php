@@ -80,7 +80,14 @@ class phpMyAdmin
      */
     public function inject(): void
     {
-        $lines = TextProcessor::readDockerComposeLines();
+        try {
+            $lines = TextProcessor::readDockerComposeLines();
+        } catch (Exception $e)
+        {
+            echo $e->getMessage() . PHP_EOL;
+            exit;
+        }
+
         $lineNumber = TextProcessor::findLastLineNumberOfServices($lines);
         $phpMyAdminService = $this->indentPhpMyAdminServiceLines();
 
@@ -97,7 +104,14 @@ class phpMyAdmin
      */
     public function add(): void
     {
-        $lines = TextProcessor::readInteractsWithDockerComposeServicesLines();
+        try {
+            $lines = TextProcessor::readInteractsWithDockerComposeServicesLines();
+        } catch (Exception $e)
+        {
+            echo $e->getMessage() . PHP_EOL;
+            exit;
+        }
+
         $lineNumber = TextProcessor::findLastServiceLineNumber($lines);
         $lines[$lineNumber - 1] = $lines[$lineNumber - 1] . "\n\t\t'phpmyadmin',";
         $sailTraitFile = get_defined_constants()['SAIL_TRAIT_FILE'];
@@ -179,10 +193,14 @@ class TextProcessor
      * reads all lines of docker-compose.yml file into an array & returns it
      *
      * @return array
+     * @throws Exception
      */
     public static function readDockerComposeLines(): array
     {
         $dockerComposeFile = get_defined_constants()['DOCKER_COMPOSE_FILE'];
+        if (!is_file($dockerComposeFile) || !is_readable($dockerComposeFile))
+            throw new \Exception("Failed! can't read docker-compose.yml lines or file does not exist");
+
         return file($dockerComposeFile, FILE_IGNORE_NEW_LINES);
     }
 
@@ -190,10 +208,14 @@ class TextProcessor
      * reads all lines of InteractsWithDockerComposeServices.php file into an array & returns it
      *
      * @return array
+     * @throws Exception
      */
     public static function readInteractsWithDockerComposeServicesLines(): array
     {
         $sailTraitFile = get_defined_constants()['SAIL_TRAIT_FILE'];
+        if (!is_file($sailTraitFile) || !is_readable($sailTraitFile))
+            throw new \Exception("Failed! can't read InteractsWithDockerComposeServices.php lines or file does not exist");
+
         return file($sailTraitFile, FILE_IGNORE_NEW_LINES);
     }
 
