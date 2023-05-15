@@ -199,7 +199,7 @@ class TextProcessor
     {
         $dockerComposeFile = get_defined_constants()['DOCKER_COMPOSE_FILE'];
         if (!is_file($dockerComposeFile) || !is_readable($dockerComposeFile))
-            throw new \Exception("Failed! can't read docker-compose.yml lines or file does not exist");
+            throw new Exception("Failed! can't read docker-compose.yml lines or file does not exist");
 
         return file($dockerComposeFile, FILE_IGNORE_NEW_LINES);
     }
@@ -214,11 +214,14 @@ class TextProcessor
     {
         $sailTraitFile = get_defined_constants()['SAIL_TRAIT_FILE'];
         if (!is_file($sailTraitFile) || !is_readable($sailTraitFile))
-            throw new \Exception("Failed! can't read InteractsWithDockerComposeServices.php lines or file does not exist");
+            throw new Exception("Failed! can't read InteractsWithDockerComposeServices.php lines or file does not exist");
 
         return file($sailTraitFile, FILE_IGNORE_NEW_LINES);
     }
 
+    /**
+     * @throws Exception
+     */
     public static function doesDockerComposeContainPhpMyAdmin(): bool
     {
         $lines = self::readDockerComposeLines();
@@ -254,7 +257,7 @@ class Backup
         if (is_file($dockerComposeBackupFile) && is_readable($dockerComposeBackupFile))
             copy($dockerComposeBackupFile, $dockerComposeFile);
         else
-            throw new \Exception("Restoration Failed! docker-compose.backup doesn't exist or isn't readable");
+            throw new Exception("Restoration Failed! docker-compose.backup doesn't exist or isn't readable");
     }
 
     /**
@@ -269,7 +272,7 @@ class Backup
         if (is_file($sailTraitBackupFile) && is_readable($sailTraitBackupFile))
             copy($sailTraitBackupFile, $sailTraitFile);
         else
-            throw new \Exception("Restoration Failed! InteractsWithDockerComposeServices.backup doesn't exist or isn't readable");
+            throw new Exception("Restoration Failed! InteractsWithDockerComposeServices.backup doesn't exist or isn't readable");
     }
 
     public static function removePhpMyAdminStub(): void
@@ -286,7 +289,7 @@ class CLI
     public function __construct()
     {
         global $argv;
-        $pairArguments = array_filter($argv, fn($arg) => str_contains($arg, '='));
+        $pairArguments = array_filter($argv, fn($arg) => strpos($arg, '='));
         $query = implode('&', $pairArguments);
         parse_str($query, $params);
         $this->arguments = $params;
