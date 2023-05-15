@@ -25,3 +25,16 @@ then `sail up -d`
 you can restore your original files in case something goes wrong. 
 backups are created automatically before changing files. 
 in order to use backups run `php install.php --restore`.<br>
+
+### Configurations
+##### Changing port:
+You can access phpMyAdmin on a port other than `8080` if not already in use.
+to do that run the script like `php install.php --port=8008`. 
+now after bringing up the network using `sail up -d`, 
+phpmyadmin is available at `localhost:8008`
+
+##### Changing version:
+The Default phpMyAdmin image version is `5.2.1`. If you want to use a specific version,
+run the script with `version` flag like `php install.php --version=5.0`
+
+of course, you can use both flags together like `php install.php --version=5.0 --port=8008`

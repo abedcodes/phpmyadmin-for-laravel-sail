@@ -1,8 +1,10 @@
 <?php
 
+$cli = new CLI();
+
 ############### configs ################
-const PHPMYADMIN_VERSION = '5.2.1';
-const PHPMYADMIN_PORT = '8080';
+define("PHPMYADMIN_VERSION", $cli->arguments['--version'] ?? '5.2.1');
+define("PHPMYADMIN_PORT", $cli->arguments['--port'] ?? '8080');
 const DOCKER_COMPOSE_FILE = './docker-compose.yml';
 const SAIL_TRAIT_FILE = './vendor/laravel/sail/src/Console/Concerns/InteractsWithDockerComposeServices.php';
 ########################################
@@ -252,5 +254,19 @@ class Backup
     {
         $sailStubsPath = dirname(get_defined_constants()['SAIL_TRAIT_FILE'], 4) . '/stubs';
         unlink("$sailStubsPath/phpmyadmin.stub");
+    }
+}
+
+class CLI
+{
+    public array $arguments;
+
+    public function __construct()
+    {
+        global $argv;
+        $pairArguments = array_filter($argv, fn($arg) => str_contains($arg, '='));
+        $query = implode('&', $pairArguments);
+        parse_str($query, $params);
+        $this->arguments = $params;
     }
 }
