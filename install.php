@@ -28,10 +28,14 @@ if(in_array('--restore', $argv))
     exit;
 }
 
-(new phpMyAdmin(new TextProcessor()))
-    ->preparePhpMyAdminService()
-    ->inject();
-//    ->add();
+$phpMyAdmin = (new phpMyAdmin(new TextProcessor()))->preparePhpMyAdminService();
+
+if (in_array('--add', $argv)) {
+    $phpMyAdmin->add();
+}
+else {
+    $phpMyAdmin->inject();
+}
 ########################################
 
 class phpMyAdmin

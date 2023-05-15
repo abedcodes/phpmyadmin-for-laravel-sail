@@ -13,10 +13,9 @@ based on your `.env` definitions
 
 
 - If you haven't installed laravel sail using `sail:install` command,
-open `install.php` file & comment line 13 & uncomment line 14,
-now run `php install.php` in your project directory.
-then run `sail:install` & select phpmyadmin along mysql & other required services.
-then `sail up -d`
+run `php install.php --add` in your project directory.
+then run `sail:install` & select phpmyadmin along mysql 
+& other required services. then `sail up -d`
 <br>
 
 
