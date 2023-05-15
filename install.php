@@ -9,7 +9,7 @@ const SAIL_TRAIT_FILE = './vendor/laravel/sail/src/Console/Concerns/InteractsWit
 
 ########### execution lines ############
 
-if(in_array('--redo', $argv))
+if(in_array('--restore', $argv))
 {
     try {
         if((new TextProcessor())->doesDockerComposeContainPhpMyAdmin()) {

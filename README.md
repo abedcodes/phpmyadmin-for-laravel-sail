@@ -17,3 +17,11 @@ open `install.php` file & comment line 13 & uncomment line 14,
 now run `php install.php` in your project directory.
 then run `sail:install` & select phpmyadmin along mysql & other required services.
 then `sail up -d`
+<br>
+
+
+### Backups
+
+you can restore your original files in case something goes wrong. 
+backups are created automatically before changing files. 
+in order to use backups run `php install.php --restore`.<br>
