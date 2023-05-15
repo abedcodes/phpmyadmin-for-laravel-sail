@@ -14,7 +14,7 @@ const SAIL_TRAIT_FILE = './vendor/laravel/sail/src/Console/Concerns/InteractsWit
 if(in_array('--restore', $argv))
 {
     try {
-        if((new TextProcessor())->doesDockerComposeContainPhpMyAdmin()) {
+        if(TextProcessor::doesDockerComposeContainPhpMyAdmin()) {
             Backup::restoreDockerComposeFile();
         }
         else {
@@ -28,7 +28,7 @@ if(in_array('--restore', $argv))
     exit;
 }
 
-$phpMyAdmin = (new phpMyAdmin(new TextProcessor()))->preparePhpMyAdminService();
+$phpMyAdmin = new phpMyAdmin;
 
 if (in_array('--add', $argv)) {
     $phpMyAdmin->add();
@@ -42,9 +42,7 @@ class phpMyAdmin
 {
     protected string $phpMyAdminService;
 
-    public function __construct(protected TextProcessor $textProcessor) {}
-
-    public function preparePhpMyAdminService(): static
+    public function __construct()
     {
         $phpMyAdminVersion = get_defined_constants()['PHPMYADMIN_VERSION'];
         $phpMyAdminPort = get_defined_constants()['PHPMYADMIN_PORT'];
@@ -62,8 +60,6 @@ class phpMyAdmin
             depends_on:
                 - mysql
         PHPMYADMIN;
-
-        return $this;
     }
 
     /**
@@ -74,7 +70,7 @@ class phpMyAdmin
     public function indentPhpMyAdminServiceLines(): string
     {
         $phpMyAdminServiceLines = explode("\n", $this->phpMyAdminService);
-        return implode("\n", $this->textProcessor->addIndentationToLines($phpMyAdminServiceLines));
+        return implode("\n", TextProcessor::addIndentationToLines($phpMyAdminServiceLines));
     }
 
     /**
@@ -84,8 +80,8 @@ class phpMyAdmin
      */
     public function inject(): void
     {
-        $lines = $this->textProcessor->readDockerComposeLines();
-        $lineNumber = $this->textProcessor->findLastLineNumberOfServices($lines);
+        $lines = TextProcessor::readDockerComposeLines();
+        $lineNumber = TextProcessor::findLastLineNumberOfServices($lines);
         $phpMyAdminService = $this->indentPhpMyAdminServiceLines();
 
         $lines[$lineNumber - 1] = $lines[$lineNumber - 1] . "\n$phpMyAdminService";
@@ -101,8 +97,8 @@ class phpMyAdmin
      */
     public function add(): void
     {
-        $lines = $this->textProcessor->readInteractsWithDockerComposeServicesLines();
-        $lineNumber = $this->textProcessor->findLastServiceLineNumber($lines);
+        $lines = TextProcessor::readInteractsWithDockerComposeServicesLines();
+        $lineNumber = TextProcessor::findLastServiceLineNumber($lines);
         $lines[$lineNumber - 1] = $lines[$lineNumber - 1] . "\n\t\t'phpmyadmin',";
         $sailTraitFile = get_defined_constants()['SAIL_TRAIT_FILE'];
         Backup::backupInteractsWithDockerComposeServicesFile();
@@ -131,9 +127,9 @@ class TextProcessor
      * @param array $lines
      * @return int
      */
-    public function findFirstServiceLineNumber(array $lines): int
+    public static function findFirstServiceLineNumber(array $lines): int
     {
-        return array_search('protected $services = [', $this->removeLinesIndentation($lines)) + 2;
+        return array_search('protected $services = [', self::removeLinesIndentation($lines)) + 2;
     }
 
     /**
@@ -143,16 +139,16 @@ class TextProcessor
      * @param array $lines
      * @return int
      */
-    public function findLastServiceLineNumber(array $lines): int
+    public static function findLastServiceLineNumber(array $lines): int
     {
-        return array_search('];', $this->removeLinesIndentation($lines));
+        return array_search('];', self::removeLinesIndentation($lines));
     }
 
     /**
      * @param array $lines
      * @return array
      */
-    public function removeLinesIndentation(array $lines): array
+    public static function removeLinesIndentation(array $lines): array
     {
         return array_map(fn($line) => trim($line), $lines);
     }
@@ -163,7 +159,7 @@ class TextProcessor
      * @param array $lines
      * @return array
      */
-    public function addIndentationToLines(array $lines): array
+    public static function addIndentationToLines(array $lines): array
     {
         return array_map(fn($line) => "    $line", $lines);
     }
@@ -174,7 +170,7 @@ class TextProcessor
      * @param array $lines
      * @return int
      */
-    public function findLastLineNumberOfServices(array $lines): int
+    public static function findLastLineNumberOfServices(array $lines): int
     {
         return array_search('networks:', $lines);
     }
@@ -184,7 +180,7 @@ class TextProcessor
      *
      * @return array
      */
-    public function readDockerComposeLines(): array
+    public static function readDockerComposeLines(): array
     {
         $dockerComposeFile = get_defined_constants()['DOCKER_COMPOSE_FILE'];
         return file($dockerComposeFile, FILE_IGNORE_NEW_LINES);
@@ -195,15 +191,15 @@ class TextProcessor
      *
      * @return array
      */
-    public function readInteractsWithDockerComposeServicesLines(): array
+    public static function readInteractsWithDockerComposeServicesLines(): array
     {
         $sailTraitFile = get_defined_constants()['SAIL_TRAIT_FILE'];
         return file($sailTraitFile, FILE_IGNORE_NEW_LINES);
     }
 
-    public function doesDockerComposeContainPhpMyAdmin(): bool
+    public static function doesDockerComposeContainPhpMyAdmin(): bool
     {
-        $lines = $this->readDockerComposeLines();
+        $lines = self::readDockerComposeLines();
         return in_array('    phpmyadmin:', $lines);
     }
 }
