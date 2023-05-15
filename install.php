@@ -8,6 +8,24 @@ const SAIL_TRAIT_FILE = './vendor/laravel/sail/src/Console/Concerns/InteractsWit
 ########################################
 
 ########### execution lines ############
+
+if(in_array('--redo', $argv))
+{
+    try {
+        if((new TextProcessor())->doesDockerComposeContainPhpMyAdmin()) {
+            Backup::restoreDockerComposeFile();
+        }
+        else {
+            Backup::restoreInteractsWithDockerComposeServicesFile();
+            Backup::removePhpMyAdminStub();
+        }
+    } catch (Exception $e)
+    {
+        echo $e->getMessage() . PHP_EOL;
+    }
+    exit;
+}
+
 (new phpMyAdmin(new TextProcessor()))
     ->preparePhpMyAdminService()
     ->inject();
@@ -25,7 +43,7 @@ class phpMyAdmin
         $phpMyAdminVersion = get_defined_constants()['PHPMYADMIN_VERSION'];
         $phpMyAdminPort = get_defined_constants()['PHPMYADMIN_PORT'];
 
-        $this->phpMyAdminService = 
+        $this->phpMyAdminService =
         <<<PHPMYADMIN
         phpmyadmin:
             image: 'phpmyadmin:$phpMyAdminVersion'
@@ -66,6 +84,7 @@ class phpMyAdmin
 
         $lines[$lineNumber - 1] = $lines[$lineNumber - 1] . "\n$phpMyAdminService";
         $dockerComposeFile = get_defined_constants()['DOCKER_COMPOSE_FILE'];
+        Backup::backupDockerComposeFile();
         file_put_contents($dockerComposeFile, implode("\n", $lines));
     }
 
@@ -80,6 +99,7 @@ class phpMyAdmin
         $lineNumber = $this->textProcessor->findLastServiceLineNumber($lines);
         $lines[$lineNumber - 1] = $lines[$lineNumber - 1] . "\n\t\t'phpmyadmin',";
         $sailTraitFile = get_defined_constants()['SAIL_TRAIT_FILE'];
+        Backup::backupInteractsWithDockerComposeServicesFile();
         file_put_contents($sailTraitFile, implode("\n", $lines));
         $this->publishStub();
     }
@@ -94,7 +114,6 @@ class phpMyAdmin
         $sailStubsPath = dirname(get_defined_constants()['SAIL_TRAIT_FILE'], 4) . '/stubs';
         file_put_contents("$sailStubsPath/phpmyadmin.stub", $this->phpMyAdminService);
     }
-
 }
 
 class TextProcessor
@@ -174,5 +193,64 @@ class TextProcessor
     {
         $sailTraitFile = get_defined_constants()['SAIL_TRAIT_FILE'];
         return file($sailTraitFile, FILE_IGNORE_NEW_LINES);
+    }
+
+    public function doesDockerComposeContainPhpMyAdmin(): bool
+    {
+        $lines = $this->readDockerComposeLines();
+        return in_array('    phpmyadmin:', $lines);
+    }
+}
+
+class Backup
+{
+    public static function backupDockerComposeFile(): void
+    {
+        $dockerComposeFile = get_defined_constants()['DOCKER_COMPOSE_FILE'];
+        $dockerComposeDir = dirname($dockerComposeFile);
+        copy($dockerComposeFile, "$dockerComposeDir/docker-compose.backup");
+    }
+
+    public static function backupInteractsWithDockerComposeServicesFile(): void
+    {
+        $sailTraitFile = get_defined_constants()['SAIL_TRAIT_FILE'];
+        $sailTraitDir = dirname($sailTraitFile);
+        copy($sailTraitFile, "$sailTraitDir/InteractsWithDockerComposeServices.backup");
+    }
+
+    /**
+     * @throws Exception
+     */
+    public static function restoreDockerComposeFile(): void
+    {
+        $dockerComposeFile = get_defined_constants()['DOCKER_COMPOSE_FILE'];
+        $dockerComposeDir = dirname($dockerComposeFile);
+        $dockerComposeBackupFile = "$dockerComposeDir/docker-compose.backup";
+
+        if (is_file($dockerComposeBackupFile) && is_readable($dockerComposeBackupFile))
+            copy($dockerComposeBackupFile, $dockerComposeFile);
+        else
+            throw new \Exception("Restoration Failed! docker-compose.backup doesn't exist or isn't readable");
+    }
+
+    /**
+     * @throws Exception
+     */
+    public static function restoreInteractsWithDockerComposeServicesFile(): void
+    {
+        $sailTraitFile = get_defined_constants()['SAIL_TRAIT_FILE'];
+        $sailTraitDir = dirname($sailTraitFile);
+        $sailTraitBackupFile = "$sailTraitDir/InteractsWithDockerComposeServices.backup";
+
+        if (is_file($sailTraitBackupFile) && is_readable($sailTraitBackupFile))
+            copy($sailTraitBackupFile, $sailTraitFile);
+        else
+            throw new \Exception("Restoration Failed! InteractsWithDockerComposeServices.backup doesn't exist or isn't readable");
+    }
+
+    public static function removePhpMyAdminStub(): void
+    {
+        $sailStubsPath = dirname(get_defined_constants()['SAIL_TRAIT_FILE'], 4) . '/stubs';
+        unlink("$sailStubsPath/phpmyadmin.stub");
     }
 }
