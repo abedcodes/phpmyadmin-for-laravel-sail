@@ -94,7 +94,10 @@ class phpMyAdmin
         $lines[$lineNumber - 1] = $lines[$lineNumber - 1] . "\n$phpMyAdminService";
         $dockerComposeFile = get_defined_constants()['DOCKER_COMPOSE_FILE'];
         Backup::backupDockerComposeFile();
-        file_put_contents($dockerComposeFile, implode("\n", $lines));
+
+        print file_put_contents($dockerComposeFile, implode("\n", $lines)) 
+            ? 'DONE. phpmyadmin service was injected to docker-compose.yml'.PHP_EOL
+            : 'FAILED! couldn\'t inject phpmyadmin service to docker-compose.yml'.PHP_EOL;
     }
 
     /**
@@ -116,7 +119,11 @@ class phpMyAdmin
         $lines[$lineNumber - 1] = $lines[$lineNumber - 1] . "\n\t\t'phpmyadmin',";
         $sailTraitFile = get_defined_constants()['SAIL_TRAIT_FILE'];
         Backup::backupInteractsWithDockerComposeServicesFile();
-        file_put_contents($sailTraitFile, implode("\n", $lines));
+
+        print file_put_contents($sailTraitFile, implode("\n", $lines))
+            ? 'DONE. phpmyadmin service was added to list of sail\'s services'.PHP_EOL
+            : 'FAILED! couldn\'t add phpmyadmin to list of sail\'s services'.PHP_EOL;
+        
         $this->publishStub();
     }
 
