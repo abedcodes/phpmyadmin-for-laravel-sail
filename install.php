@@ -17,9 +17,13 @@ if(in_array('--restore', $argv))
         if(TextProcessor::doesDockerComposeContainPhpMyAdmin()) {
             Backup::restoreDockerComposeFile();
         }
-        else {
+        elseif(TextProcessor::doesInteractsWithDockerComposeServicesContainPhpMyAdmin()) {
             Backup::restoreInteractsWithDockerComposeServicesFile();
             Backup::removePhpMyAdminStub();
+        }
+        else {
+            exit('FAILED! there is nothing to restore. install the service first'.PHP_EOL
+            ."like `php install-pma`".PHP_EOL);
         }
     } catch (Exception $e)
     {
@@ -81,11 +85,20 @@ class phpMyAdmin
     public function inject(): void
     {
         try {
+
+            if(TextProcessor::doesDockerComposeContainPhpMyAdmin()) 
+                exit("FAILED! phpmyadmin service already exists in docker-compose.yml".PHP_EOL
+                ."If you want to change something about the service,".PHP_EOL 
+                ."use --restore flag first & install the service again with new port & version".PHP_EOL
+                ."like `php install-pma --restore && php install-pma --version=5.1 --port=8008 --add".PHP_EOL);
+
             $lines = TextProcessor::readDockerComposeLines();
-        } catch (Exception $e)
-        {
+
+        } catch (Exception $e) {
+
             echo $e->getMessage() . PHP_EOL;
             exit;
+
         }
 
         $lineNumber = TextProcessor::findLastLineNumberOfServices($lines);
@@ -108,11 +121,20 @@ class phpMyAdmin
     public function add(): void
     {
         try {
+
+            if(TextProcessor::doesInteractsWithDockerComposeServicesContainPhpMyAdmin()) 
+                exit("FAILED! phpmyadmin service has already been added".PHP_EOL
+                ."If you want to change something about the service,".PHP_EOL 
+                ."use --restore flag first & install the service again with new port & version along --add flag".PHP_EOL
+                ."like `php install-pma --restore && php install-pma --version=5.1 --port=8008 --add".PHP_EOL);
+
             $lines = TextProcessor::readInteractsWithDockerComposeServicesLines();
-        } catch (Exception $e)
-        {
+
+        } catch (Exception $e){
+
             echo $e->getMessage() . PHP_EOL;
             exit;
+
         }
 
         $lineNumber = TextProcessor::findLastServiceLineNumber($lines);
@@ -234,6 +256,15 @@ class TextProcessor
         $lines = self::readDockerComposeLines();
         return in_array('    phpmyadmin:', $lines);
     }
+
+    /**
+     * @throws Exception
+     */
+    public static function doesInteractsWithDockerComposeServicesContainPhpMyAdmin()
+    {
+        $lines = self::readInteractsWithDockerComposeServicesLines();
+        return in_array("		'phpmyadmin',", $lines);
+    }
 }
 
 class Backup
@@ -289,6 +320,10 @@ class Backup
     }
 }
 
+/**
+ * initializing this class puts all key=value like passed arguments
+ * inside $arguments property & facilitates working with them
+ */
 class CLI
 {
     public array $arguments;
