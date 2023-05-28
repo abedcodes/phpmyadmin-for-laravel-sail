@@ -272,8 +272,9 @@ class Backup
     public static function backupDockerComposeFile(): void
     {
         $dockerComposeFile = get_defined_constants()['DOCKER_COMPOSE_FILE'];
-        $dockerComposeDir = dirname($dockerComposeFile);
-        copy($dockerComposeFile, "$dockerComposeDir/docker-compose.backup");
+        $sailTraitFile = get_defined_constants()['SAIL_TRAIT_FILE'];
+        $sailTraitDir = dirname($sailTraitFile);
+        copy($dockerComposeFile, "$sailTraitDir/docker-compose.backup");
     }
 
     public static function backupInteractsWithDockerComposeServicesFile(): void
@@ -289,8 +290,9 @@ class Backup
     public static function restoreDockerComposeFile(): void
     {
         $dockerComposeFile = get_defined_constants()['DOCKER_COMPOSE_FILE'];
-        $dockerComposeDir = dirname($dockerComposeFile);
-        $dockerComposeBackupFile = "$dockerComposeDir/docker-compose.backup";
+        $sailTraitFile = get_defined_constants()['SAIL_TRAIT_FILE'];
+        $sailTraitDir = dirname($sailTraitFile);
+        $dockerComposeBackupFile = "$sailTraitDir/docker-compose.backup";
 
         if (is_file($dockerComposeBackupFile) && is_readable($dockerComposeBackupFile))
             copy($dockerComposeBackupFile, $dockerComposeFile);
