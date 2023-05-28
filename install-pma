@@ -273,7 +273,7 @@ class Backup
         copy($sailTraitFile, "$sailTraitDir/InteractsWithDockerComposeServices.backup");
     }
 
-    public static function restoreDockerComposeFile(): void
+    public static function restoreDockerComposeFile()
     {
         $dockerComposeFile = get_defined_constants()['DOCKER_COMPOSE_FILE'];
         $sailTraitFile = get_defined_constants()['SAIL_TRAIT_FILE'];
@@ -286,7 +286,7 @@ class Backup
             return "Restoration Failed! docker-compose.backup doesn't exist or isn't readable";
     }
 
-    public static function restoreInteractsWithDockerComposeServicesFile(): void
+    public static function restoreInteractsWithDockerComposeServicesFile()
     {
         $sailTraitFile = get_defined_constants()['SAIL_TRAIT_FILE'];
         $sailTraitDir = dirname($sailTraitFile);
