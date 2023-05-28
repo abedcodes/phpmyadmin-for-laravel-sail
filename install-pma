@@ -13,22 +13,11 @@ const SAIL_TRAIT_FILE = './vendor/laravel/sail/src/Console/Concerns/InteractsWit
 
 if(in_array('--restore', $argv))
 {
-    try {
-        if(TextProcessor::doesDockerComposeContainPhpMyAdmin()) {
-            Backup::restoreDockerComposeFile();
-        }
-        elseif(TextProcessor::doesInteractsWithDockerComposeServicesContainPhpMyAdmin()) {
-            Backup::restoreInteractsWithDockerComposeServicesFile();
-            Backup::removePhpMyAdminStub();
-        }
-        else {
-            exit('FAILED! there is nothing to restore. install the service first'.PHP_EOL
-            ."like `php install-pma`".PHP_EOL);
-        }
-    } catch (Exception $e)
-    {
-        echo $e->getMessage() . PHP_EOL;
-    }
+    Backup::restoreDockerComposeFile();
+    Backup::restoreInteractsWithDockerComposeServicesFile();
+    Backup::deleteBackupFiles();
+    echo "related files were restored to right before latest phpmyadmin service installation".PHP_EOL;
+    echo "backup files were deleted".PHP_EOL;
     exit;
 }
 
@@ -284,9 +273,6 @@ class Backup
         copy($sailTraitFile, "$sailTraitDir/InteractsWithDockerComposeServices.backup");
     }
 
-    /**
-     * @throws Exception
-     */
     public static function restoreDockerComposeFile(): void
     {
         $dockerComposeFile = get_defined_constants()['DOCKER_COMPOSE_FILE'];
@@ -297,12 +283,9 @@ class Backup
         if (is_file($dockerComposeBackupFile) && is_readable($dockerComposeBackupFile))
             copy($dockerComposeBackupFile, $dockerComposeFile);
         else
-            throw new Exception("Restoration Failed! docker-compose.backup doesn't exist or isn't readable");
+            return "Restoration Failed! docker-compose.backup doesn't exist or isn't readable";
     }
 
-    /**
-     * @throws Exception
-     */
     public static function restoreInteractsWithDockerComposeServicesFile(): void
     {
         $sailTraitFile = get_defined_constants()['SAIL_TRAIT_FILE'];
@@ -312,11 +295,22 @@ class Backup
         if (is_file($sailTraitBackupFile) && is_readable($sailTraitBackupFile))
             copy($sailTraitBackupFile, $sailTraitFile);
         else
-            throw new Exception("Restoration Failed! InteractsWithDockerComposeServices.backup doesn't exist or isn't readable");
+            return "Restoration Failed! InteractsWithDockerComposeServices.backup doesn't exist or isn't readable";
     }
 
-    public static function removePhpMyAdminStub(): void
+    public static function deleteBackupFiles()
     {
+        #1
+        $sailTraitFile = get_defined_constants()['SAIL_TRAIT_FILE'];
+        $sailTraitDir = dirname($sailTraitFile);
+        $dockerComposeBackupFile = "$sailTraitDir/docker-compose.backup";
+        unlink($dockerComposeBackupFile);
+
+        #2 
+        $sailTraitBackupFile = "$sailTraitDir/InteractsWithDockerComposeServices.backup";
+        unlink($sailTraitBackupFile);
+
+        #3
         $sailStubsPath = dirname(get_defined_constants()['SAIL_TRAIT_FILE'], 4) . '/stubs';
         unlink("$sailStubsPath/phpmyadmin.stub");
     }
