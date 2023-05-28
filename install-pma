@@ -115,7 +115,7 @@ class phpMyAdmin
                 exit("FAILED! phpmyadmin service has already been added".PHP_EOL
                 ."If you want to change something about the service,".PHP_EOL 
                 ."use --restore flag first & install the service again with new port & version along --add flag".PHP_EOL
-                ."like `php install-pma --restore && php install-pma --version=5.1 --port=8008 --add".PHP_EOL);
+                ."like `php install-pma --restore && php install-pma --version=5.1 --port=8008 --add`".PHP_EOL);
 
             $lines = TextProcessor::readInteractsWithDockerComposeServicesLines();
 
@@ -217,7 +217,8 @@ class TextProcessor
     {
         $dockerComposeFile = get_defined_constants()['DOCKER_COMPOSE_FILE'];
         if (!is_file($dockerComposeFile) || !is_readable($dockerComposeFile))
-            throw new Exception("Failed! can't read docker-compose.yml lines or file does not exist");
+            throw new Exception("Failed! can't read docker-compose.yml lines or file does not exist".PHP_EOL
+            ."install sail first, or run the script in add mode using --add flag");
 
         return file($dockerComposeFile, FILE_IGNORE_NEW_LINES);
     }
