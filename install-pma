@@ -326,10 +326,18 @@ class CLI
 
     public function __construct()
     {
+        $this->preventExecutionThroughBrowser();
+
         global $argv;
         $pairArguments = array_filter($argv, fn($arg) => strpos($arg, '='));
         $query = implode('&', $pairArguments);
         parse_str($query, $params);
         $this->arguments = $params;
+    }
+
+    private function preventExecutionThroughBrowser()
+    {
+        if(php_sapi_name() !== 'cli') 
+            exit('<h2>This is not executable through browser, Run the script through terminal</h2>');
     }
 }
