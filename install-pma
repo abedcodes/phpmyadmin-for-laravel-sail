@@ -1,4 +1,4 @@
-<?php
+<?php error_reporting(E_ALL & ~E_WARNING);
 
 $cli = new CLI();
 
@@ -273,7 +273,7 @@ class Backup
         copy($sailTraitFile, "$sailTraitDir/InteractsWithDockerComposeServices.backup");
     }
 
-    public static function restoreDockerComposeFile()
+    public static function restoreDockerComposeFile(): string
     {
         $dockerComposeFile = get_defined_constants()['DOCKER_COMPOSE_FILE'];
         $sailTraitFile = get_defined_constants()['SAIL_TRAIT_FILE'];
@@ -281,19 +281,23 @@ class Backup
         $dockerComposeBackupFile = "$sailTraitDir/docker-compose.backup";
 
         if (is_file($dockerComposeBackupFile) && is_readable($dockerComposeBackupFile))
-            copy($dockerComposeBackupFile, $dockerComposeFile);
+            return copy($dockerComposeBackupFile, $dockerComposeFile)
+                ? 'docker-compose.yml restored successfully'
+                : 'failed copying backup into docker-compose.yml, probably non-writable';
         else
             return "Restoration Failed! docker-compose.backup doesn't exist or isn't readable";
     }
 
-    public static function restoreInteractsWithDockerComposeServicesFile()
+    public static function restoreInteractsWithDockerComposeServicesFile(): string
     {
         $sailTraitFile = get_defined_constants()['SAIL_TRAIT_FILE'];
         $sailTraitDir = dirname($sailTraitFile);
         $sailTraitBackupFile = "$sailTraitDir/InteractsWithDockerComposeServices.backup";
 
         if (is_file($sailTraitBackupFile) && is_readable($sailTraitBackupFile))
-            copy($sailTraitBackupFile, $sailTraitFile);
+            return copy($sailTraitBackupFile, $sailTraitFile) 
+                ? 'InteractsWithDockerComposeServices.php restored successfully'
+                : 'failed copying backup into InteractsWithDockerComposeServices.php, probably non-writable';
         else
             return "Restoration Failed! InteractsWithDockerComposeServices.backup doesn't exist or isn't readable";
     }
