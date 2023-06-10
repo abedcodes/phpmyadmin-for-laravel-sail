@@ -29,6 +29,11 @@ $phpMyAdmin = new phpMyAdmin;
 
 if (in_array('--add', $argv)) {
     $phpMyAdmin->add();
+    $dockerComposeFile = get_defined_constants()['DOCKER_COMPOSE_FILE'];
+    if(file_exists($dockerComposeFile)) { //file existence check to prevent exception being thrown by next line
+        if(TextProcessor::doesDockerComposeContainPhpMyAdmin())
+            TextProcessor::removePhpMyAdminFromDockerCompose();
+    }
 }
 else { //inject mode
     $phpMyAdmin->inject();
@@ -258,6 +263,26 @@ class TextProcessor
     {
         $lines = self::readInteractsWithDockerComposeServicesLines();
         return in_array("		'phpmyadmin',", $lines);
+    }
+
+    /**
+     * removes phpmyadmin service lines from docker-compose.yml file
+     */
+    public static function removePhpMyAdminFromDockerCompose(): string
+    {
+        $lines = self::readDockerComposeLines();
+        $startLineIndex = array_search('    phpmyadmin:', $lines);
+        $lastLineIndex = $startLineIndex + 9; // 9 is the number of lines inside phpmyadmin.stub
+
+        for($i=$startLineIndex; $i<=$lastLineIndex; $i++) {
+            unset($lines[$i]);
+        }
+
+        $dockerComposeFile = get_defined_constants()['DOCKER_COMPOSE_FILE'];
+
+        return file_put_contents($dockerComposeFile, implode("\n", $lines)) 
+            ? 'phpmyadmin service was removed from docker-compose.yml'.PHP_EOL
+            : 'couldn\'t remove phpmyadmin service from docker-compose.yml'.PHP_EOL;
     }
 }
 
