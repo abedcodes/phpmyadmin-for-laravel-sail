@@ -269,6 +269,7 @@ class Backup
         $sailTraitFile = get_defined_constants()['SAIL_TRAIT_FILE'];
         $sailTraitDir = dirname($sailTraitFile);
         copy($dockerComposeFile, "$sailTraitDir/docker-compose.backup");
+        (new Historian)->write('docker-compose.backup created');
     }
 
     public static function backupInteractsWithDockerComposeServicesFile(): void
@@ -276,6 +277,7 @@ class Backup
         $sailTraitFile = get_defined_constants()['SAIL_TRAIT_FILE'];
         $sailTraitDir = dirname($sailTraitFile);
         copy($sailTraitFile, "$sailTraitDir/InteractsWithDockerComposeServices.backup");
+        (new Historian)->write('InteractsWithDockerComposeServices.backup created');
     }
 
     public static function restoreDockerComposeFile(): string
@@ -354,7 +356,9 @@ class CLI
             exit('<h2>This is not executable through browser, Run the script through terminal</h2>');
     }
 }
-
+/**
+ * this class is used for managing restoration process smarter
+ */
 class Historian {
     /**
      * holds address to the file used to write history in
@@ -372,11 +376,13 @@ class Historian {
     /**
      * @param string
      * action value may be:
-     * 1- docker-compose.yml restored
-     * 2- InteractsWithDockerComposeServices.php restored
-     * 3- phpmyadmin.stub deleted
-     * 4- docker-compose.backup deleted
-     * 5- InteractsWithDockerComposeServices.backup deleted
+     * 1- docker-compose.backup created
+     * 2- docker-compose.yml restored
+     * 3- docker-compose.backup deleted
+     * 4- InteractsWithDockerComposeServices.backup created
+     * 5- InteractsWithDockerComposeServices.php restored
+     * 6- InteractsWithDockerComposeServices.backup deleted
+     * 7- phpmyadmin.stub deleted
      */
     public function write(string $action)
     {
