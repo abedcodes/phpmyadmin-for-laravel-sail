@@ -72,7 +72,7 @@ class phpMyAdmin
                 exit("FAILED! phpmyadmin service already exists in docker-compose.yml".PHP_EOL
                 ."If you want to change something about the service,".PHP_EOL 
                 ."use --restore flag first & install the service again with new port & version".PHP_EOL
-                ."like `php install-pma --restore && php install-pma --version=5.1 --port=8008 --add".PHP_EOL);
+                ."like `php install-pma --restore && php install-pma --version=5.1 --port=8008`".PHP_EOL);
 
             $lines = TextProcessor::readDockerComposeLines();
 
