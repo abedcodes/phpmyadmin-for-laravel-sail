@@ -12,9 +12,14 @@ const SAIL_TRAIT_FILE = './vendor/laravel/sail/src/Console/Concerns/InteractsWit
 ########### execution lines ############
 if(in_array('--restore', $argv))
 {
+    if((new Historian)->isEmpty()) 
+        exit("nothing to restore! please install the service first,".PHP_EOL
+            ."like `php install-pma`".PHP_EOL);
+
     Backup::restoreDockerComposeFile();
     Backup::restoreInteractsWithDockerComposeServicesFile();
     Backup::deleteBackupFiles();
+    (new Historian)->clear();
     echo "related files were restored to right before latest phpmyadmin service installation".PHP_EOL;
     echo "backup files were deleted".PHP_EOL;
     exit;
@@ -280,12 +285,14 @@ class Backup
         $sailTraitDir = dirname($sailTraitFile);
         $dockerComposeBackupFile = "$sailTraitDir/docker-compose.backup";
 
-        if (is_file($dockerComposeBackupFile) && is_readable($dockerComposeBackupFile))
+        if(file_exists($dockerComposeBackupFile)) {
             return copy($dockerComposeBackupFile, $dockerComposeFile)
                 ? 'docker-compose.yml restored successfully'
                 : 'failed copying backup into docker-compose.yml, probably non-writable';
-        else
-            return "Restoration Failed! docker-compose.backup doesn't exist or isn't readable";
+            (new Historian)->write('docker-compose.yml restored');
+        } else {
+            return "docker-compose.backup doesn't exist or isn't readable";
+        }
     }
 
     public static function restoreInteractsWithDockerComposeServicesFile(): string
@@ -294,12 +301,14 @@ class Backup
         $sailTraitDir = dirname($sailTraitFile);
         $sailTraitBackupFile = "$sailTraitDir/InteractsWithDockerComposeServices.backup";
 
-        if (is_file($sailTraitBackupFile) && is_readable($sailTraitBackupFile))
+        if (file_exists($sailTraitBackupFile)) {
             return copy($sailTraitBackupFile, $sailTraitFile) 
                 ? 'InteractsWithDockerComposeServices.php restored successfully'
                 : 'failed copying backup into InteractsWithDockerComposeServices.php, probably non-writable';
-        else
-            return "Restoration Failed! InteractsWithDockerComposeServices.backup doesn't exist or isn't readable";
+            (new Historian)->write('InteractsWithDockerComposeServices.php restored');
+        } else {
+            return "InteractsWithDockerComposeServices.backup doesn't exist or isn't readable";
+        }
     }
 
     public static function deleteBackupFiles()
@@ -308,15 +317,15 @@ class Backup
         $sailTraitFile = get_defined_constants()['SAIL_TRAIT_FILE'];
         $sailTraitDir = dirname($sailTraitFile);
         $dockerComposeBackupFile = "$sailTraitDir/docker-compose.backup";
-        unlink($dockerComposeBackupFile);
+        unlink($dockerComposeBackupFile) ? (new Historian)->write('docker-compose.backup deleted') : false;
 
         #2 
         $sailTraitBackupFile = "$sailTraitDir/InteractsWithDockerComposeServices.backup";
-        unlink($sailTraitBackupFile);
+        unlink($sailTraitBackupFile) ? (new Historian)->write('InteractsWithDockerComposeServices.backup deleted') : false;
 
         #3
         $sailStubsPath = dirname(get_defined_constants()['SAIL_TRAIT_FILE'], 4) . '/stubs';
-        unlink("$sailStubsPath/phpmyadmin.stub");
+        unlink("$sailStubsPath/phpmyadmin.stub") ? (new Historian)->write('phpmyadmin.stub deleted') : false;
     }
 }
 
@@ -360,6 +369,15 @@ class Historian {
         $this->book = "$sailTraitDir/book";
     }
 
+    /**
+     * @param string
+     * action value may be:
+     * 1- docker-compose.yml restored
+     * 2- InteractsWithDockerComposeServices.php restored
+     * 3- phpmyadmin.stub deleted
+     * 4- docker-compose.backup deleted
+     * 5- InteractsWithDockerComposeServices.backup deleted
+     */
     public function write(string $action)
     {
         file_put_contents($this->book, $action, FILE_APPEND);
@@ -370,5 +388,18 @@ class Historian {
         $allActions = file($this->book, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
         $lastActionKey = array_key_last($allActions);
         return $allActions[$lastActionKey];
+    }
+
+    public function isEmpty(): bool
+    {
+        if(!file_exists($this->book) || file_get_contents($this->book) === '' ) 
+            return true;
+
+        return false;
+    }
+
+    public function clear()
+    {
+        file_put_contents($this->book, '');
     }
 }
