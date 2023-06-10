@@ -320,7 +320,10 @@ class Backup
                 return 'failed copying backup into docker-compose.yml, probably non-writable';
             }
         } else {
-            return "docker-compose.backup doesn't exist or isn't readable";
+            if(TextProcessor::doesDockerComposeContainPhpMyAdmin())
+                TextProcessor::removePhpMyAdminFromDockerCompose();
+
+            return 'docker-compose.yml restored successfully';
         }
     }
 
