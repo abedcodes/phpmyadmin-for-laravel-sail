@@ -345,3 +345,30 @@ class CLI
             exit('<h2>This is not executable through browser, Run the script through terminal</h2>');
     }
 }
+
+class Historian {
+    /**
+     * holds address to the file used to write history in
+     * @var string
+     */
+    public string $book;
+
+    public function __construct()
+    {
+        $sailTraitFile = get_defined_constants()['SAIL_TRAIT_FILE'];
+        $sailTraitDir = dirname($sailTraitFile);
+        $this->book = "$sailTraitDir/book";
+    }
+
+    public function write(string $action)
+    {
+        file_put_contents($this->book, $action, FILE_APPEND);
+    }
+
+    public function lastAction(): string
+    {
+        $allActions = file($this->book, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
+        $lastActionKey = array_key_last($allActions);
+        return $allActions[$lastActionKey];
+    }
+}
