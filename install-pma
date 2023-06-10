@@ -313,10 +313,12 @@ class Backup
         $dockerComposeBackupFile = "$sailTraitDir/docker-compose.backup";
 
         if(file_exists($dockerComposeBackupFile)) {
-            return copy($dockerComposeBackupFile, $dockerComposeFile)
-                ? 'docker-compose.yml restored successfully'
-                : 'failed copying backup into docker-compose.yml, probably non-writable';
-            (new Historian)->write('docker-compose.yml restored');
+            if(copy($dockerComposeBackupFile, $dockerComposeFile)) {
+                (new Historian)->write('docker-compose.yml restored');
+                return 'docker-compose.yml restored successfully';
+            } else {
+                return 'failed copying backup into docker-compose.yml, probably non-writable';
+            }
         } else {
             return "docker-compose.backup doesn't exist or isn't readable";
         }
@@ -329,10 +331,12 @@ class Backup
         $sailTraitBackupFile = "$sailTraitDir/InteractsWithDockerComposeServices.backup";
 
         if (file_exists($sailTraitBackupFile)) {
-            return copy($sailTraitBackupFile, $sailTraitFile) 
-                ? 'InteractsWithDockerComposeServices.php restored successfully'
-                : 'failed copying backup into InteractsWithDockerComposeServices.php, probably non-writable';
-            (new Historian)->write('InteractsWithDockerComposeServices.php restored');
+            if(copy($sailTraitBackupFile, $sailTraitFile)) {
+                (new Historian)->write('InteractsWithDockerComposeServices.php restored');
+                return 'InteractsWithDockerComposeServices.php restored successfully';
+            } else {
+                return 'failed copying backup into InteractsWithDockerComposeServices.php, probably non-writable';
+            }
         } else {
             return "InteractsWithDockerComposeServices.backup doesn't exist or isn't readable";
         }
