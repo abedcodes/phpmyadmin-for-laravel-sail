@@ -10,22 +10,20 @@ const SAIL_TRAIT_FILE = './vendor/laravel/sail/src/Console/Concerns/InteractsWit
 ########################################
 
 ########### execution lines ############
-if(in_array('--restore', $argv))
+$phpMyAdmin = new phpMyAdmin;
+
+if(in_array('--remove', $argv))
 {
-    if((new Historian)->isEmpty()) 
-        exit("nothing to restore! please install the service first,".PHP_EOL
+    if(!$phpMyAdmin->isInstalled())
+        exit("no services is installed! please install the service first,".PHP_EOL
             ."like `php install-pma`".PHP_EOL);
 
     Backup::restoreDockerComposeFile();
     Backup::restoreInteractsWithDockerComposeServicesFile();
     Backup::deleteBackupFiles();
-    (new Historian)->clear();
-    echo "related files were restored to right before latest phpmyadmin service installation".PHP_EOL;
-    echo "backup files were deleted".PHP_EOL;
+    echo "service was removed successfully".PHP_EOL;
     exit;
 }
-
-$phpMyAdmin = new phpMyAdmin;
 
 if (in_array('--add', $argv)) {
     $phpMyAdmin->add();
@@ -145,6 +143,18 @@ class phpMyAdmin
     {
         $sailStubsPath = dirname(get_defined_constants()['SAIL_TRAIT_FILE'], 4) . '/stubs';
         file_put_contents("$sailStubsPath/phpmyadmin.stub", $this->phpMyAdminService);
+    }
+
+    public function remove()
+    {
+        // remove phpmyadmin service from docker-compose.yml if exists
+        // remove phpmyadmin line from sail trait file if exists
+        // delete phpmyadmin stub
+    }
+
+    public function isInstalled(): bool
+    {
+        
     }
 }
 
@@ -288,75 +298,8 @@ class TextProcessor
 
 class Backup
 {
-    public static function backupDockerComposeFile(): void
-    {
-        $dockerComposeFile = get_defined_constants()['DOCKER_COMPOSE_FILE'];
-        $sailTraitFile = get_defined_constants()['SAIL_TRAIT_FILE'];
-        $sailTraitDir = dirname($sailTraitFile);
-        copy($dockerComposeFile, "$sailTraitDir/docker-compose.backup");
-        (new Historian)->write('docker-compose.backup created');
-    }
-
-    public static function backupInteractsWithDockerComposeServicesFile(): void
-    {
-        $sailTraitFile = get_defined_constants()['SAIL_TRAIT_FILE'];
-        $sailTraitDir = dirname($sailTraitFile);
-        copy($sailTraitFile, "$sailTraitDir/InteractsWithDockerComposeServices.backup");
-        (new Historian)->write('InteractsWithDockerComposeServices.backup created');
-    }
-
-    public static function restoreDockerComposeFile(): string
-    {
-        $dockerComposeFile = get_defined_constants()['DOCKER_COMPOSE_FILE'];
-        $sailTraitFile = get_defined_constants()['SAIL_TRAIT_FILE'];
-        $sailTraitDir = dirname($sailTraitFile);
-        $dockerComposeBackupFile = "$sailTraitDir/docker-compose.backup";
-
-        if(file_exists($dockerComposeBackupFile)) {
-            if(copy($dockerComposeBackupFile, $dockerComposeFile)) {
-                (new Historian)->write('docker-compose.yml restored');
-                return 'docker-compose.yml restored successfully';
-            } else {
-                return 'failed copying backup into docker-compose.yml, probably non-writable';
-            }
-        } else {
-            if(TextProcessor::doesDockerComposeContainPhpMyAdmin())
-                TextProcessor::removePhpMyAdminFromDockerCompose();
-
-            return 'docker-compose.yml restored successfully';
-        }
-    }
-
-    public static function restoreInteractsWithDockerComposeServicesFile(): string
-    {
-        $sailTraitFile = get_defined_constants()['SAIL_TRAIT_FILE'];
-        $sailTraitDir = dirname($sailTraitFile);
-        $sailTraitBackupFile = "$sailTraitDir/InteractsWithDockerComposeServices.backup";
-
-        if (file_exists($sailTraitBackupFile)) {
-            if(copy($sailTraitBackupFile, $sailTraitFile)) {
-                (new Historian)->write('InteractsWithDockerComposeServices.php restored');
-                return 'InteractsWithDockerComposeServices.php restored successfully';
-            } else {
-                return 'failed copying backup into InteractsWithDockerComposeServices.php, probably non-writable';
-            }
-        } else {
-            return "InteractsWithDockerComposeServices.backup doesn't exist or isn't readable";
-        }
-    }
-
     public static function deleteBackupFiles()
     {
-        #1
-        $sailTraitFile = get_defined_constants()['SAIL_TRAIT_FILE'];
-        $sailTraitDir = dirname($sailTraitFile);
-        $dockerComposeBackupFile = "$sailTraitDir/docker-compose.backup";
-        unlink($dockerComposeBackupFile) ? (new Historian)->write('docker-compose.backup deleted') : false;
-
-        #2 
-        $sailTraitBackupFile = "$sailTraitDir/InteractsWithDockerComposeServices.backup";
-        unlink($sailTraitBackupFile) ? (new Historian)->write('InteractsWithDockerComposeServices.backup deleted') : false;
-
         #3
         $sailStubsPath = dirname(get_defined_constants()['SAIL_TRAIT_FILE'], 4) . '/stubs';
         unlink("$sailStubsPath/phpmyadmin.stub") ? (new Historian)->write('phpmyadmin.stub deleted') : false;
@@ -386,58 +329,5 @@ class CLI
     {
         if(php_sapi_name() !== 'cli') 
             exit('<h2>This is not executable through browser, Run the script through terminal</h2>');
-    }
-}
-/**
- * this class is used for managing restoration process smarter
- */
-class Historian {
-    /**
-     * holds address to the file used to write history in
-     * @var string
-     */
-    public string $book;
-
-    public function __construct()
-    {
-        $sailTraitFile = get_defined_constants()['SAIL_TRAIT_FILE'];
-        $sailTraitDir = dirname($sailTraitFile);
-        $this->book = "$sailTraitDir/book";
-    }
-
-    /**
-     * @param string
-     * action value may be:
-     * 1- docker-compose.backup created
-     * 2- docker-compose.yml restored
-     * 3- docker-compose.backup deleted
-     * 4- InteractsWithDockerComposeServices.backup created
-     * 5- InteractsWithDockerComposeServices.php restored
-     * 6- InteractsWithDockerComposeServices.backup deleted
-     * 7- phpmyadmin.stub deleted
-     */
-    public function write(string $action)
-    {
-        file_put_contents($this->book, $action, FILE_APPEND);
-    }
-
-    public function lastAction(): string
-    {
-        $allActions = file($this->book, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
-        $lastActionKey = array_key_last($allActions);
-        return $allActions[$lastActionKey];
-    }
-
-    public function isEmpty(): bool
-    {
-        if(!file_exists($this->book) || file_get_contents($this->book) === '' ) 
-            return true;
-
-        return false;
-    }
-
-    public function clear()
-    {
-        file_put_contents($this->book, '');
     }
 }
